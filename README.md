@@ -103,7 +103,7 @@ Debian/Ubuntu:
 - libcap2-bin
 - curl
 - yarn
-- nodejs (v8)
+- nodejs (v8) (default v10 will be REMOVED when installed to ubuntu19/debian10 !)
 - npm (v3)
 - build-essential
 - redis-server
