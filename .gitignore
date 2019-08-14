@@ -10,3 +10,7 @@ tests/*
 !tests/Debian/Vagrantfile
 !tests/run-tests.sh
 !tests/README.md
+!tests/Debian10
+!tests/Debian10/Vagrantfile
+!tests/Ubuntu19
+!tests/Ubuntu19/Vagrantfile

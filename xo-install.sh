@@ -136,6 +136,12 @@ function InstallDependenciesDebian {
 	echo -n "Installing apt-transport-https and ca-certificates packages to support https repos..."
 	apt-get install -y apt-transport-https ca-certificates >/dev/null
 	echo "done"
+	if [[ $OSVERSION =~ ^(10|19) ]]; then
+		echo		
+		echo -n "Debian 10/Ubuntu 19, so installing gnupg..."
+		apt-get install gnupg -y >/dev/null
+		echo "done"
+	fi
 
 	# install curl for later tasks if missing
 	if [[ -z $(which curl) ]]; then
@@ -168,10 +174,26 @@ function InstallDependenciesDebian {
 	# only run automated node install if package not found
 	if [[ -z $(dpkg -l | grep node) ]] || [[ -z $(which npm) ]]; then
 		echo
-		echo -n "Installing node.js..."
-		curl -sL https://deb.nodesource.com/setup_8.x | bash - >/dev/null
-		apt-get install -y nodejs >/dev/null
-		echo "done"
+		echo "Installing node.js..."
+			if [[ "$OSVERSION" =~ ^(10|19) ]]; then
+			# https://github.com/nodesource/distributions/issues/866 nodejs8 install issue workaround
+			echo
+			echo -n "Debian 10/Ubuntu 19, removing default nodejs 10 before installing version 8..."
+			apt-get purge nodejs -y >/dev/null
+			curl -sL https://deb.nodesource.com/setup_8.x | bash - >/dev/null
+			cat >/etc/apt/preferences.d/nodesource <<-EOL
+			Package: *
+			Pin: origin deb.nodesource.com
+			Pin-Priority: 600
+			EOL
+			apt-cache policy nodejs >/dev/null
+			apt-get install nodejs -y >/dev/null
+			echo "done"
+		else
+			curl -sL https://deb.nodesource.com/setup_8.x | bash - >/dev/null
+			apt-get install -y nodejs >/dev/null
+			echo "done"
+		fi
 	fi
 
 
@@ -607,11 +629,11 @@ function CheckOS {
 	elif [[ -f /etc/os-release ]]; then
 		OSVERSION=$(grep ^VERSION_ID /etc/os-release | cut -d'=' -f2 | grep -Eo "[0-9]{1,2}" | head -1)
 		OSNAME=$(grep ^NAME /etc/os-release | cut -d'=' -f2 | sed 's/"//g' | awk '{print $1}')
-		if [[ $OSNAME == "Debian" ]] && [[ ! $OSVERSION =~ ^(8|9)$ ]]; then
-			echo "Only Debian 8/9 supported"
+		if [[ $OSNAME == "Debian" ]] && [[ ! $OSVERSION =~ ^(8|9|10)$ ]]; then
+			echo "Only Debian 8/9/10 supported"
 			exit 0
-		elif [[ $OSNAME == "Ubuntu" ]] && [[ ! $OSVERSION =~ ^(16|18)$ ]]; then
-			echo "Only Ubuntu 16/18 supported"
+		elif [[ $OSNAME == "Ubuntu" ]] && [[ ! $OSVERSION =~ ^(16|18|19)$ ]]; then
+			echo "Only Ubuntu 16/18/19 supported"
 			exit 0
 		fi
 	else
